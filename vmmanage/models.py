@@ -17,6 +17,7 @@ import logging
 import string
 from collections import defaultdict
 from random import randint, choice as rand_choice
+import secrets
 
 from autotask import models as task_models
 from django.conf import settings
@@ -33,8 +34,8 @@ LEGAL_API_VM_ACTIONS = [
     'stop',
     'status',
     # 'address',
-    'resume',
-    'suspend',
+    # 'resume',
+    # 'suspend',
     'reload'
 ]
 
@@ -57,6 +58,7 @@ logger = logging.getLogger(__name__)
 
 class Problem(models.Model):
     slug = models.SlugField(unique=True)
+    path = models.CharField(max_length=255)
     name = models.CharField(_("name"), max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -74,9 +76,11 @@ class Problem(models.Model):
         ordering = ("slug", )
 
     @classmethod
-    def create(cls, slug, name, config):
+    def create(cls, path, config):
         cls.check_config(config)
-        problem = cls(slug=slug, name=name)
+
+        slug_id = secrets.token_urlsafe(settings.PROBLEM_ID_LENGTH)
+        problem = cls(slug=slug_id, name=slug_id, path=path)
         problem.set_basic_config(config)
         problem.save()
         problem.assign_tags(config['tags'])
@@ -208,7 +212,7 @@ class Problem(models.Model):
 
     def get_vagrant(self):
         if not self.__vagr_instance:
-            self.__vagr_instance = vagr_factory(self.slug)
+            self.__vagr_instance = vagr_factory(self.path)
         return self.__vagr_instance
 
     def __get_problem_config(self):
@@ -442,8 +446,8 @@ class Task(models.Model):
         return "{} [{}]".format(self.task_name, TASK_STATUS_NAMES[self.task.status])
 
 
-def vagr_factory(vm_slug):
+def vagr_factory(vm_path):
     return Deployment.Vagrant(
-        vm_slug,
+        vm_path,
         deployment_path=settings.PROBLEM_DEPLOYMENT_PATH,
     )

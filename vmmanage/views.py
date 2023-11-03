@@ -16,6 +16,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import permission_required
 from django.db import IntegrityError
+from django.db.models.functions import Lower
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -135,7 +136,7 @@ def problem_overview(request):
         request,
         "vms/overview.html",
         {
-            "problems": models.Problem.objects.all()
+            "problems": models.Problem.objects.all().order_by(Lower("name"))
         }
     )
 

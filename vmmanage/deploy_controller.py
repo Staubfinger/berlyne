@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from glob import glob
+import os
 from os import path
 
 from django.conf import settings
@@ -51,14 +52,13 @@ def _install_deployment_callback(vagr_depl, f, vm_db, **kwargs):
     install_deployment(vagr_depl, vm_db)
 
 
-def create_problem(problem_slug, vagrant_name):
-    vagr = vagr_factory(problem_slug)
+def create_problem(problem_path, vagrant_name):
+    vagr = vagr_factory(problem_path)
 
     # Set name as work around, so unique contraint is not violated
     # in case two VMs get created at the same time
     # This raises an IntegretyError if the problem slug already exists
-    problem = models.Problem.create(slug=problem_slug, name=problem_slug,
-                                    config=vagr.get_config())
+    problem = models.Problem.create(path=problem_path, config=vagr.get_config())
     vm = problem.vm
 
     if vm:
@@ -77,34 +77,46 @@ def destroy_problem(problem):
     return tasks.destroy_problem(problem)
 
 
-def _task_from_slug(action, vm_slug, vm_db=None, **kwargs):
-    vagr = vagr_factory(vm_slug)
+def _task_from_path(action, vm_path, vm_db=None, **kwargs):
+    vagr = vagr_factory(vm_path)
     return tasks.run_on_vagr(vagr, action, vm_db, **kwargs)
 
 
 def run_on_existing(action, vm_obj, **kwargs):
     if action not in LEGAL_API_VM_ACTIONS:
         raise IllegalAction("Illegal action '{}'".format(action))
-    t = _task_from_slug(action, vm_obj.problem.slug, vm_obj, **kwargs)
+    t = _task_from_path(action, vm_obj.problem.path, vm_obj, **kwargs)
     vm_obj.add_task(t, action)
     return t
+
+
+def _find_directories_with_file(start_directory, file_name):
+    docker_compose_directories = []
+
+    for root, dirs, files in os.walk(start_directory):
+        if file_name in files:
+            docker_compose_directories.append(root)
+
+    return docker_compose_directories
 
 
 # Todo: make cheaper
 def find_installable_problems():
     problems = []
-    existing_slugs = models.Problem.objects.all().values_list('slug', flat=True)
-    for task_path in glob(
-            path.join(
-                settings.PROBLEM_DEPLOYMENT_PATH,
-                "*",
-                Deployment.CONFIG_FILE_NAME
-            )
+    existing_paths = models.Problem.objects.all().values_list('path', flat=True)
+    for task_dir in _find_directories_with_file(
+            settings.PROBLEM_DEPLOYMENT_PATH,
+            Deployment.CONFIG_FILE_NAME
     ):
-        task_path = path.dirname(task_path)
-        task_name = path.split(task_path)[-1]
-        if task_name not in existing_slugs:
-            problems.append(task_name)
+        # We work with relative paths within the problem dir
+        task_dir = os.path.relpath(
+            task_dir,
+            settings.PROBLEM_DEPLOYMENT_PATH
+        )
+
+        if task_dir not in existing_paths:
+            problems.append(task_dir)
+
     return problems
 
 

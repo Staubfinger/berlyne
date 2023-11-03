@@ -234,6 +234,9 @@ AUTOTASK_WORKER_EXECUTABLE = "python3"
 # Time the VMs tasks should be stored in the DB
 TASK_TTL = 60 * 60 * 24
 
+# Length of problem slug/id in bytes
+PROBLEM_ID_LENGTH = 12
+
 # uptomate
 # Define where the problem folder is
 PROBLEM_DEPLOYMENT_PATH = os.path.join(BASE_DIR, 'problems')
