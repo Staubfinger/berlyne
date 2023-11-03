@@ -115,9 +115,12 @@ def install_available_problems():
     problem_paths = find_installable_problems()
 
     for problem_path in problem_paths:
-        create_problem(problem_path)
+        try:
+            create_problem(problem_path)
+            yield True, problem_path, None
+        except BaseException as ex:
+            yield False, problem_path, ex
 
-    return problem_paths
 
 def action_on_state(vms, action, states, **action_kwargs):
     for vm in vms:

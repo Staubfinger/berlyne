@@ -21,7 +21,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for problem in Problem.objects.all():
 
-            print(f"Updating {problem.name}/{problem.slug} from {problem.path}")
+            print(f"Processing {problem.name}/{problem.slug} from {problem.path}")
             if not os.path.isdir(problem.relative_path):
                 print(
                     self.style.ERROR(
@@ -41,6 +41,13 @@ class Command(BaseCommand):
             problem.save()
 
         if options["install"]:
-            paths = install_available_problems()
-            for path in paths:
-                print(f"Launching install job for {path}.")
+            for success, path, error in install_available_problems():
+                if success:
+                    print(f"Launched install job for {path}.")
+                else:
+                    error_type = type(error).__name__
+                    print(
+                        self.style.ERROR(
+                            f"Could not launch job for {path}: {error_type} - {error}"
+                        )
+                    )
