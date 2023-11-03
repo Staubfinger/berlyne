@@ -19,7 +19,7 @@ from os import path
 
 from django.conf import settings
 
-from uptomate import Deployment
+from .uptomate import Deployment
 from . import models
 from . import tasks
 from .models import (
@@ -39,20 +39,12 @@ def get_avail_vagrant_files():
     return __AVAIL_VAGR_FILES
 
 
-def install_deployment(vagr_depl: Deployment.Vagrant, vm):
-    if isinstance(vm, str):
-        vm = models.VirtualMachine.objects.get(slug=vm)
-
-    # vagr_depl.set_ports(vm.get_port_list())
-    # with vagr_depl.open_content_file(FLAG_FILE_NAME) as f:
-    #     f.write(vm.problem.flag)
-
-
 def _install_deployment_callback(vagr_depl, f, vm_db, **kwargs):
-    install_deployment(vagr_depl, vm_db)
+    # Currently not used for anything
+    pass
 
 
-def create_problem(problem_path, vagrant_name):
+def create_problem(problem_path, vagr_file=None):
     vagr = vagr_factory(problem_path)
 
     # Set name as work around, so unique contraint is not violated
@@ -100,7 +92,6 @@ def _find_directories_with_file(start_directory, file_name):
     return docker_compose_directories
 
 
-# Todo: make cheaper
 def find_installable_problems():
     problems = []
     existing_paths = models.Problem.objects.all().values_list('path', flat=True)
@@ -119,6 +110,14 @@ def find_installable_problems():
 
     return problems
 
+
+def install_available_problems():
+    problem_paths = find_installable_problems()
+
+    for problem_path in problem_paths:
+        create_problem(problem_path)
+
+    return problem_paths
 
 def action_on_state(vms, action, states, **action_kwargs):
     for vm in vms:

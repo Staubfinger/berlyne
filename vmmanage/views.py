@@ -23,7 +23,7 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
 import vmmanage.models
-from uptomate.Deployment import (
+from .uptomate.Deployment import (
     VAGRANT_RUNNING_STATES,
     VAGRANT_STOPPED_STATES
 )
@@ -113,9 +113,9 @@ def install_problem(request):
     form = forms.VagrantFilesForm(request.POST)
     if form.is_valid():
         vagr_name = form.cleaned_data['vagrant_file']
-        problem_name = request.POST['problem']
+        problem_path = request.POST['problem']
         try:
-            deploy_controller.create_problem(problem_name, vagr_name)
+            deploy_controller.create_problem(problem_path, vagr_name)
         except (OSError, IntegrityError) as ex:
             print(ex)
             return redirect(reverse('vmmanage_show_installable') + '?m=exists')

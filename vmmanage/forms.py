@@ -28,4 +28,4 @@ class VagrantFilesForm(Form):
 class ProblemEditForm(ModelForm):
     class Meta:
         model = models.Problem
-        fields = ["name", "desc", "category"]
+        fields = ["name", "desc", "path", "category", "flag"]

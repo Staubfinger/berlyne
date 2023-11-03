@@ -19,7 +19,7 @@ from time import sleep
 from autotask.tasks import delayed_task
 from django.conf import settings
 
-from uptomate import Deployment
+from .uptomate import Deployment
 from .models import State, UNKNOWN_HOST
 
 MSG_SUCCESS = "Finished"

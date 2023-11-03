@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
+import os.path
 import string
 from collections import defaultdict
 from random import randint, choice as rand_choice
@@ -26,8 +27,8 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from uptomate import Deployment
-from uptomate.Provider import LOCALHOST, ALLOWED_PROVIDERS
+from .uptomate import Deployment
+from .uptomate.Provider import LOCALHOST, ALLOWED_PROVIDERS
 
 LEGAL_API_VM_ACTIONS = [
     'start',
@@ -58,7 +59,7 @@ logger = logging.getLogger(__name__)
 
 class Problem(models.Model):
     slug = models.SlugField(unique=True)
-    path = models.CharField(max_length=255)
+    path = models.CharField(max_length=255, blank=True)
     name = models.CharField(_("name"), max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -101,6 +102,16 @@ class Problem(models.Model):
             except ValueError:
                 pass  # Problem was not phisically installed, just existed in DB
         self.delete()
+
+    @property
+    def relative_path(self):
+        """
+        :return: Path relative to django installation.
+        """
+        return os.path.join(
+            settings.PROBLEM_DEPLOYMENT_PATH,
+            self.path
+        )
 
     @property
     def vm(self):
